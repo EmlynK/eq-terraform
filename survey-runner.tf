@@ -7,6 +7,41 @@ terraform {
   }
 }
 
+module "eq-elasticsearch" {
+  source         = "github.com/ONSdigital/eq-terraform-elasticsearch?ref=add-cluster-and-data-scripts"
+  env            = "${var.env}"
+  aws_access_key = "${var.aws_access_key}"
+  aws_secret_key = "${var.aws_secret_key}"
+  access_list    = "0.0.0.0/0"
+}
+
+module "eq-suggest-api" {
+  source                 = "github.com/ONSdigital/eq-ecs-deploy?ref=v1.5.0"
+  env                    = "${var.env}"
+  aws_access_key         = "${var.aws_access_key}"
+  aws_secret_key         = "${var.aws_secret_key}"
+  vpc_id                 = "${module.survey-runner-vpc.vpc_id}"
+  dns_zone_name          = "${var.dns_zone_name}"
+  ecs_cluster_name       = "${module.eq-ecs.ecs_cluster_name}"
+  aws_alb_arn            = "${module.eq-ecs.aws_alb_arn}"
+  aws_alb_listener_arn   = "${module.eq-ecs.aws_alb_listener_arn}"
+  service_name           = "lookup-api"
+  listener_rule_priority = 700
+  docker_registry        = "${var.survey_runner_docker_registry}"
+  container_name         = "eq-lookup-api"
+  container_port         = 5000
+  healthcheck_path       = "/status"
+  container_tag          = "initial-setup"
+  slack_alert_sns_arn    = "${module.survey-runner-alerting.slack_alert_sns_arn}"
+
+  container_environment_variables = <<EOF
+      {
+        "name": "LOOKUP_URL",
+        "value": "https://${module.eq-elasticsearch.suggest-endpoint}/"
+      }
+  EOF
+}
+
 module "survey-runner-alerting" {
   source             = "./survey-runner-alerting"
   env                = "${var.env}"
@@ -255,24 +290,24 @@ module "survey-runner-on-ecs" {
 }
 
 module "survey-runner-static-on-ecs" {
-  source                 = "github.com/ONSdigital/eq-ecs-deploy?ref=v1.5.0"
-  env                    = "${var.env}-new"
-  aws_access_key         = "${var.aws_access_key}"
-  aws_secret_key         = "${var.aws_secret_key}"
-  vpc_id                 = "${module.survey-runner-vpc.vpc_id}"
-  dns_zone_name          = "${var.dns_zone_name}"
-  dns_record_name        = "${var.env}-new-surveys.${var.dns_zone_name}"
-  ecs_cluster_name       = "${module.eq-ecs.ecs_cluster_name}"
-  aws_alb_arn            = "${module.eq-ecs.aws_alb_arn}"
-  aws_alb_listener_arn   = "${module.eq-ecs.aws_alb_listener_arn}"
-  service_name           = "surveys-static"
-  listener_rule_priority = 5
-  docker_registry        = "${var.survey_runner_docker_registry}"
-  container_name         = "eq-survey-runner-static"
-  container_port         = 80
-  container_tag          = "${var.survey_runner_tag}"
-  application_min_tasks  = "${var.survey_runner_min_tasks}"
-  slack_alert_sns_arn    = "${module.survey-runner-alerting.slack_alert_sns_arn}"
+  source                    = "github.com/ONSdigital/eq-ecs-deploy?ref=v1.5.0"
+  env                       = "${var.env}-new"
+  aws_access_key            = "${var.aws_access_key}"
+  aws_secret_key            = "${var.aws_secret_key}"
+  vpc_id                    = "${module.survey-runner-vpc.vpc_id}"
+  dns_zone_name             = "${var.dns_zone_name}"
+  dns_record_name           = "${var.env}-new-surveys.${var.dns_zone_name}"
+  ecs_cluster_name          = "${module.eq-ecs.ecs_cluster_name}"
+  aws_alb_arn               = "${module.eq-ecs.aws_alb_arn}"
+  aws_alb_listener_arn      = "${module.eq-ecs.aws_alb_listener_arn}"
+  service_name              = "surveys-static"
+  listener_rule_priority    = 5
+  docker_registry           = "${var.survey_runner_docker_registry}"
+  container_name            = "eq-survey-runner-static"
+  container_port            = 80
+  container_tag             = "${var.survey_runner_tag}"
+  application_min_tasks     = "${var.survey_runner_min_tasks}"
+  slack_alert_sns_arn       = "${module.survey-runner-alerting.slack_alert_sns_arn}"
   alb_listener_path_pattern = "/s/*"
 }
 
