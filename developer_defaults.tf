@@ -356,7 +356,6 @@ variable "survey_launcher_jwt_signing_key_path" {
   default     = "jwt-test-keys/sdc-user-authentication-signing-rrm-private-key.pem"
 }
 
-
 // Author
 variable "author_registry" {
   description = "The docker repository for the author images to run"
@@ -410,17 +409,17 @@ variable "author_api_min_tasks" {
 
 variable "publisher_min_tasks" {
   description = "The minimum number of Publisher tasks to run"
-  default = "1"
+  default     = "1"
 }
 
 variable "author_use_sentry" {
-  description   = "Use sentry for bug reporting."
-  default       = "false"
+  description = "Use sentry for bug reporting."
+  default     = "false"
 }
 
 variable "author_use_fullstory" {
-  description   = "Use fullstory for capturing user sessions."
-  default       = "false"
+  description = "Use fullstory for capturing user sessions."
+  default     = "false"
 }
 
 variable "author_database_name" {
